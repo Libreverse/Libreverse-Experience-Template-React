@@ -2,6 +2,8 @@ import { Canvas } from "@react-three/fiber";
 import { Controllers, VRButton, XR } from "@react-three/xr";
 import { type FC, Suspense, memo } from "react";
 import Scene from "./Scene";
+import { EffectsPipeline } from "./EffectsPipeline";
+import { HotKeysProvider } from "./HotKeysProvider";
 
 const Overlay: FC = memo(() => {
   return (
@@ -16,7 +18,7 @@ Overlay.displayName = "Overlay";
 
 const App: FC = () => {
   return (
-    <>
+    <HotKeysProvider>
       <VRButton />
       <Canvas
         shadows
@@ -35,9 +37,10 @@ const App: FC = () => {
             <Scene />
           </Suspense>
         </XR>
+        <EffectsPipeline />
       </Canvas>
       <Overlay />
-    </>
+    </HotKeysProvider>
   );
 };
 

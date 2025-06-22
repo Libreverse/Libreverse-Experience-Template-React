@@ -1,9 +1,11 @@
 import { Physics, useBox, usePlane, useSphere } from "@react-three/cannon";
-import { Grid, PointerLockControls } from "@react-three/drei";
+import { Grid, Html, PointerLockControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Interactive } from "@react-three/xr";
 import { type FC, useEffect, useRef, useState } from "react";
-import { type Mesh, Vector3 } from "three";
+import type { Mesh as ThreeMesh } from "three/src/objects/Mesh.js";
+type Mesh = ThreeMesh;
+import { Vector3 } from "three/src/math/Vector3.js";
 import type { PointerLockControls as PointerLockControlsImpl } from "three-stdlib";
 import type { GameObjectUpdate, PlayerState } from "./p2p/types";
 
@@ -36,11 +38,19 @@ interface BoxProps {
   scale?: number;
 }
 
+const DEFAULT_MATERIAL = { friction: 0.6, restitution: 0.2 };
+
 const Box: FC<BoxProps> = ({ color, position, scale = 1 }) => {
   const [ref] = useBox<Mesh>(() => ({
-    mass: 1,
+    mass: 2, // more realistic mass
     position,
     args: [scale, scale, scale],
+    material: DEFAULT_MATERIAL,
+    allowSleep: true,
+    sleepSpeedLimit: 0.1,
+    sleepTimeLimit: 1,
+    linearDamping: 0.05,
+    angularDamping: 0.1,
   }));
   const [hovered, setHovered] = useState(false);
   return (
@@ -48,7 +58,7 @@ const Box: FC<BoxProps> = ({ color, position, scale = 1 }) => {
       onHover={() => setHovered(true)}
       onBlur={() => setHovered(false)}
     >
-      <mesh ref={ref}>
+      <mesh ref={ref} castShadow receiveShadow>
         <boxGeometry args={[scale, scale, scale]} />
         <meshStandardMaterial
           color={hovered ? "#ff0000" : color}
@@ -64,14 +74,24 @@ interface SphereProps {
 }
 
 const Sphere: FC<SphereProps> = ({ position }) => {
-  const [ref] = useSphere<Mesh>(() => ({ mass: 1, position, args: [0.5] }));
+  const [ref] = useSphere<Mesh>(() => ({
+    mass: 1,
+    position,
+    args: [0.5],
+    material: DEFAULT_MATERIAL,
+    allowSleep: true,
+    sleepSpeedLimit: 0.1,
+    sleepTimeLimit: 1,
+    linearDamping: 0.02,
+    angularDamping: 0.05,
+  }));
   const [hovered, setHovered] = useState(false);
   return (
     <Interactive
       onHover={() => setHovered(true)}
       onBlur={() => setHovered(false)}
     >
-      <mesh ref={ref}>
+      <mesh ref={ref} castShadow receiveShadow>
         <sphereGeometry args={[0.5, 32, 32]} />
         <meshStandardMaterial
           color={hovered ? "#ff0000" : "#4080ff"}
@@ -86,10 +106,14 @@ const Floor: FC = () => {
   const [ref] = usePlane<Mesh>(() => ({
     rotation: [-Math.PI / 2, 0, 0],
     position: [0, 0, 0],
+    type: "Static",
+    material: { friction: 0.9, restitution: 0.1 },
+    allowSleep: true,
   }));
   return (
-    <mesh ref={ref} visible={false}>
-      <planeGeometry args={[100, 100]} />
+    <mesh ref={ref} visible={false} /* keep floor invisible */>
+      <planeGeometry args={[1e9, 1e9]} />
+      {/* No material needed since invisible */}
     </mesh>
   );
 };
@@ -110,22 +134,39 @@ const Player: FC<PlayerProps> = ({
   playerColor,
 }) => {
   const { camera } = useThree();
+  // Add grounded state
+  const [grounded, setGrounded] = useState(false);
   const [, api] = useSphere<Mesh>(() => ({
     mass: 1,
     position: [0, 1, 5],
     args: [0.5],
-    fixedRotation: true,
-    linearDamping: 0.9,
+    fixedRotation: false, // allow rotation for realism
+    linearDamping: 0.2,
+    angularDamping: 0.2,
+    material: DEFAULT_MATERIAL,
+    allowSleep: true,
+    sleepSpeedLimit: 0.1,
+    sleepTimeLimit: 1,
+    // Use onCollideBegin and onCollideEnd to track grounded state
+    onCollideBegin: () => {
+      setGrounded(true);
+    },
+    onCollideEnd: () => {
+      setGrounded(false);
+    },
   }));
 
   const velocity = useRef<[number, number, number]>([0, 0, 0]);
   const position = useRef<[number, number, number]>([0, 1, 5]);
   const lastUpdateTime = useRef<number>(0);
 
+  // Use hotkeys context
+  const { keys } = useHotKeys();
+
   useEffect(() => {
-    api.velocity.subscribe(
-      (v: [number, number, number]) => (velocity.current = v),
-    );
+    api.velocity.subscribe((v: [number, number, number]) => {
+      velocity.current = v;
+    });
     api.position.subscribe((p: [number, number, number]) => {
       position.current = p;
       // Send player updates every 100ms to avoid flooding
@@ -143,39 +184,6 @@ const Player: FC<PlayerProps> = ({
     });
   }, [api, onPlayerUpdate, playerId, playerName, playerColor, camera]);
 
-  const keys = useRef({ w: false, a: false, s: false, d: false });
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === "KeyW") keys.current.w = true;
-      if (e.code === "KeyS") keys.current.s = true;
-      if (e.code === "KeyA") keys.current.a = true;
-      if (e.code === "KeyD") keys.current.d = true;
-    };
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.code === "KeyW") keys.current.w = false;
-      if (e.code === "KeyS") keys.current.s = false;
-      if (e.code === "KeyA") keys.current.a = false;
-      if (e.code === "KeyD") keys.current.d = false;
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-    };
-  }, []);
-
-  // Re-lock pointer controls if click events release it (e.g., after interacting with objects)
-  useEffect(() => {
-    const handlePointerDown = () => {
-      if (document.pointerLockElement === null) {
-        controlsRef.current?.lock?.();
-      }
-    };
-    window.addEventListener("mousedown", handlePointerDown);
-    return () => window.removeEventListener("mousedown", handlePointerDown);
-  }, [controlsRef]);
-
   useFrame(() => {
     // Build movement direction based on camera orientation
     const forward = new Vector3();
@@ -187,21 +195,28 @@ const Player: FC<PlayerProps> = ({
     right.crossVectors(forward, new Vector3(0, 1, 0)).normalize();
 
     const moveDir = new Vector3();
-    if (keys.current.w) moveDir.add(forward);
-    if (keys.current.s) moveDir.sub(forward);
-    if (keys.current.d) moveDir.add(right);
-    if (keys.current.a) moveDir.sub(right);
+    if (keys.w) moveDir.add(forward);
+    if (keys.s) moveDir.sub(forward);
+    if (keys.d) moveDir.add(right);
+    if (keys.a) moveDir.sub(right);
 
     if (moveDir.lengthSq() > 0) {
       moveDir.normalize().multiplyScalar(5);
     }
 
-    api.velocity.set(moveDir.x, velocity.current[1], moveDir.z);
+    // Jump logic using grounded state
+    if (keys.space && grounded) {
+      api.velocity.set(moveDir.x, 7, moveDir.z); // set upward velocity for jump
+      setGrounded(false); // prevent double jump until next contact
+    } else {
+      api.velocity.set(moveDir.x, velocity.current[1], moveDir.z);
+    }
 
     const [x, y, z] = position.current;
     camera.position.set(x, y, z);
   });
 
+  // No DOM elements returned
   return null;
 };
 
@@ -300,6 +315,24 @@ const MultiplayerObject: FC<MultiplayerObjectProps> = ({
   );
 };
 
+// 1. Create a context for hotkey state
+import React, { createContext, useContext } from "react";
+
+interface HotKeysState {
+  keys: { w: boolean; a: boolean; s: boolean; d: boolean; space: boolean };
+  setKeys: React.Dispatch<React.SetStateAction<{ w: boolean; a: boolean; s: boolean; d: boolean; space: boolean }>>;
+}
+
+const HotKeysContext = createContext<HotKeysState | undefined>(undefined);
+
+export const useHotKeys = () => {
+  const ctx = useContext(HotKeysContext);
+  if (!ctx) throw new Error("useHotKeys must be used within HotKeysProvider");
+  return ctx;
+};
+
+export { HotKeysContext };
+
 const Scene: FC = () => {
   const controlsRef = useRef<PointerLockControlsImpl | null>(null);
 
@@ -377,28 +410,46 @@ const Scene: FC = () => {
     }
   };
 
+  useEffect(() => {
+    // Removed handleLock, handleUnlock, and pointerLockChange since pointerLocked is unused
+    if (controlsRef.current) {
+      // No need to add lock/unlock event listeners
+    }
+    // Always try to lock pointer on any click to keep controls active
+    const autoLock = () => {
+      if (document.pointerLockElement === null) {
+        controlsRef.current?.lock?.();
+      }
+    };
+    window.addEventListener("mousedown", autoLock);
+    return () => {
+      window.removeEventListener("mousedown", autoLock);
+    };
+  }, []);
+
   return (
     <>
       {/* Connection status indicator */}
-      <div
-        style={{
-          position: "fixed",
-          top: 10,
-          left: 10,
-          color: isConnected ? "green" : "red",
-          zIndex: 1000,
-          background: "rgba(0,0,0,0.7)",
-          padding: "5px 10px",
-          borderRadius: "5px",
-          fontSize: "12px",
-        }}
+      <Html position={[0, 2, 0]} style={{ zIndex: 1000 }} center>
+        <div
+          style={{
+            color: isConnected ? "green" : "red",
+            background: "rgba(0,0,0,0.7)",
+            padding: "5px 10px",
+            borderRadius: "5px",
+            fontSize: "12px",
+          }}
+        >
+          {isConnected
+            ? `Connected (${remotePlayers.size} players)`
+            : "Disconnected"}
+        </div>
+      </Html>
+      <Physics
+        gravity={[0, -9.81, 0]}
+        allowSleep
+        defaultContactMaterial={{ friction: 0.7, restitution: 0.15 }}
       >
-        {isConnected
-          ? `Connected (${remotePlayers.size} players)`
-          : "Disconnected"}
-      </div>
-
-      <Physics gravity={[0, -9.81, 0]}>
         <PointerLockControls ref={controlsRef} />
         <Player
           controlsRef={controlsRef}
@@ -430,8 +481,8 @@ const Scene: FC = () => {
         <Grid
           infiniteGrid
           cellSize={1}
-          sectionSize={3}
-          fadeDistance={30}
+          sectionSize={3} // original scale, but...
+          fadeDistance={1000} // ...large fade for infinite look
           fadeStrength={1}
         />
         <Box color="#50c878" position={[-2, 1, 0]} scale={1} />
