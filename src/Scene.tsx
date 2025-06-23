@@ -8,6 +8,7 @@ type Mesh = ThreeMesh;
 import { Vector3 } from "three/src/math/Vector3.js";
 import type { PointerLockControls as PointerLockControlsImpl } from "three-stdlib";
 import type { GameObjectUpdate, PlayerState } from "./p2p/types";
+import { useHotKeys } from "./HotKeysProvider";
 
 // Extend window type for P2P
 declare global {
@@ -119,7 +120,6 @@ const Floor: FC = () => {
 };
 
 interface PlayerProps {
-  controlsRef: React.MutableRefObject<PointerLockControlsImpl | null>;
   onPlayerUpdate?: (playerState: PlayerState) => void;
   playerId: string;
   playerName: string;
@@ -127,7 +127,6 @@ interface PlayerProps {
 }
 
 const Player: FC<PlayerProps> = ({
-  controlsRef,
   onPlayerUpdate,
   playerId,
   playerName,
@@ -315,24 +314,6 @@ const MultiplayerObject: FC<MultiplayerObjectProps> = ({
   );
 };
 
-// 1. Create a context for hotkey state
-import React, { createContext, useContext } from "react";
-
-interface HotKeysState {
-  keys: { w: boolean; a: boolean; s: boolean; d: boolean; space: boolean };
-  setKeys: React.Dispatch<React.SetStateAction<{ w: boolean; a: boolean; s: boolean; d: boolean; space: boolean }>>;
-}
-
-const HotKeysContext = createContext<HotKeysState | undefined>(undefined);
-
-export const useHotKeys = () => {
-  const ctx = useContext(HotKeysContext);
-  if (!ctx) throw new Error("useHotKeys must be used within HotKeysProvider");
-  return ctx;
-};
-
-export { HotKeysContext };
-
 const Scene: FC = () => {
   const controlsRef = useRef<PointerLockControlsImpl | null>(null);
 
@@ -411,19 +392,50 @@ const Scene: FC = () => {
   };
 
   useEffect(() => {
-    // Removed handleLock, handleUnlock, and pointerLockChange since pointerLocked is unused
-    if (controlsRef.current) {
-      // No need to add lock/unlock event listeners
-    }
-    // Always try to lock pointer on any click to keep controls active
-    const autoLock = () => {
-      if (document.pointerLockElement === null) {
+    // Smarter pointer lock that only activates when clicking on the 3D scene
+    const autoLock = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      
+      // Don't lock if clicking on UI elements (buttons, overlays, etc.)
+      if (target && (
+        target.closest('.vr-button') ||
+        target.closest('.ui-overlay') ||
+        target.closest('button') ||
+        target.closest('input') ||
+        target.closest('select') ||
+        target.closest('textarea') ||
+        target.closest('[data-no-pointer-lock]') ||
+        target.tagName === 'BUTTON' ||
+        target.tagName === 'INPUT' ||
+        target.tagName === 'SELECT' ||
+        target.tagName === 'TEXTAREA'
+      )) {
+        return;
+      }
+
+      // Only lock if we're not already locked and clicking on the canvas area
+      if (document.pointerLockElement === null && (
+        target.tagName === 'CANVAS' || 
+        target.closest('canvas') ||
+        !target.closest('.ui-overlay, .vr-button, button, input, select, textarea')
+      )) {
         controlsRef.current?.lock?.();
       }
     };
+
+    // Add escape key handler to unlock pointer
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && document.pointerLockElement) {
+        document.exitPointerLock();
+      }
+    };
+
     window.addEventListener("mousedown", autoLock);
+    window.addEventListener("keydown", handleEscape);
+    
     return () => {
       window.removeEventListener("mousedown", autoLock);
+      window.removeEventListener("keydown", handleEscape);
     };
   }, []);
 
@@ -452,7 +464,6 @@ const Scene: FC = () => {
       >
         <PointerLockControls ref={controlsRef} />
         <Player
-          controlsRef={controlsRef}
           onPlayerUpdate={handlePlayerUpdate}
           playerId={playerId}
           playerName={playerName}

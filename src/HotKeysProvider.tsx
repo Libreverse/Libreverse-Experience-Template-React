@@ -1,5 +1,20 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { HotKeysContext } from "./Scene";
+import React, { useState, useEffect, useCallback, createContext, useContext } from "react";
+
+// 1. Create a context for hotkey state
+interface HotKeysState {
+  keys: { w: boolean; a: boolean; s: boolean; d: boolean; space: boolean };
+  setKeys: React.Dispatch<React.SetStateAction<{ w: boolean; a: boolean; s: boolean; d: boolean; space: boolean }>>;
+}
+
+const HotKeysContext = createContext<HotKeysState | undefined>(undefined);
+
+export const useHotKeys = () => {
+  const ctx = useContext(HotKeysContext);
+  if (!ctx) throw new Error("useHotKeys must be used within HotKeysProvider");
+  return ctx;
+};
+
+export { HotKeysContext };
 
 const initialKeys = { w: false, a: false, s: false, d: false, space: false };
 

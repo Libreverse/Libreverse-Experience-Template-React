@@ -37,6 +37,8 @@ body,
   cursor: pointer;
   font-family: Arial, sans-serif;
   transition: background 0.3s ease;
+  pointer-events: auto;
+  z-index: 1000;
 }
 
 .vr-button:hover {
@@ -46,4 +48,16 @@ body,
 .vr-button:disabled {
   background: #ccc;
   cursor: not-allowed;
+}
+
+/* Utility class to prevent pointer lock on specific elements */
+.no-pointer-lock {
+  pointer-events: auto;
+  z-index: 1000;
+}
+
+/* Make sure all interactive UI elements are above the 3D scene */
+button, input, select, textarea, .ui-interactive {
+  pointer-events: auto;
+  z-index: 1000;
 }
