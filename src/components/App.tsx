@@ -1,12 +1,10 @@
 import { createXRStore } from "@react-three/xr";
 import { Canvas } from "@react-three/fiber";
 import { VRButton, XR } from "@react-three/xr";
-import { type FC, Suspense, memo } from "react";
+import { type FC, Suspense, memo, useMemo } from "react";
 import Scene from "./Scene";
 import { EffectsPipeline } from "./EffectsPipeline";
 import { HotKeysProvider } from "./HotKeysProvider";
-
-const store = createXRStore();
 
 const Overlay: FC = memo(() => {
   return (
@@ -20,6 +18,8 @@ const Overlay: FC = memo(() => {
 Overlay.displayName = "Overlay";
 
 const App: FC = () => {
+  const store = useMemo(() => createXRStore(), []);
+
   return (
     <HotKeysProvider>
       <VRButton store={store} />

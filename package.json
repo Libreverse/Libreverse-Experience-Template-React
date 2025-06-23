@@ -4,9 +4,11 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "bun dev-server.ts & bunx vite dev",
-    "build": "bunx vite build",
-    "preview": "bunx vite preview",
+    "dev": "bun dev-server.ts & bunx astro dev",
+    "start": "bunx astro dev",
+    "build": "bunx astro build",
+    "preview": "bunx astro preview",
+    "astro": "astro",
     "lint": "bunx eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "bunx eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "format": "bunx prettier --write .",
@@ -16,6 +18,8 @@
     "test:coverage": "bun test --coverage"
   },
   "dependencies": {
+    "@astrojs/react": "^3.6.2",
+    "@astrojs/tailwind": "^5.1.1",
     "@million/lint": "^1.0.14",
     "@rails/actioncable": "^8.0.200",
     "@react-three/cannon": "^6.6.0",
@@ -23,8 +27,7 @@
     "@react-three/fiber": "^9.1.2",
     "@react-three/postprocessing": "^3.0.4",
     "@react-three/xr": "^6.6.17",
-    "@vitejs/plugin-legacy": "^5.0.0",
-    "@vitejs/plugin-react": "^4.5.2",
+    "astro": "^4.16.6",
     "cannon-es": "^0.20.0",
     "cssnano": "^7.0.7",
     "cssnano-preset-advanced": "^7.0.7",
@@ -37,7 +40,6 @@
     "rollup-plugin-posthtml": "^1.1.0",
     "three": "^0.177.0",
     "three-stdlib": "^2.36.0",
-    "vite": "^5.4.19",
     "vite-plugin-singlefile": "^2.2.0"
   },
   "devDependencies": {

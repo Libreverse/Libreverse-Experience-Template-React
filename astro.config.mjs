@@ -1,16 +1,26 @@
+import { defineConfig } from 'astro/config';
+import react from '@astrojs/react';
+import tailwind from '@astrojs/tailwind';
 import MillionLint from "@million/lint";
 import legacy from "@vitejs/plugin-legacy";
-import react from "@vitejs/plugin-react";
-import cssnano from "cssnano";
-import postcssPresetEnv from "postcss-preset-env";
-import tailwindcss from "tailwindcss";
-import { defineConfig } from "vite";
 import posthtml from "rollup-plugin-posthtml";
 import htmlnano from "htmlnano";
 import { viteSingleFile } from "vite-plugin-singlefile";
+import cssnano from "cssnano";
+import postcssPresetEnv from "postcss-preset-env";
+import tailwindcss from "tailwindcss";
 
-export default defineConfig(() => {
-  return {
+// https://astro.build/config
+export default defineConfig({
+  integrations: [
+    react(), 
+    tailwind()
+  ],
+  output: 'static',
+  build: {
+    inlineStylesheets: 'always',
+  },
+  vite: {
     resolve: {
       alias: {
         // Force all three.js imports to use the same instance
@@ -28,6 +38,12 @@ export default defineConfig(() => {
         "@react-three/cannon",
         "@react-three/xr",
         "@react-three/postprocessing",
+        "cannon-es",
+        "postprocessing",
+        "react",
+        "react-dom",
+        "react-hotkeys",
+        "@rails/actioncable",
       ],
       exclude: ["three/examples/jsm/*"],
     },
@@ -76,7 +92,6 @@ export default defineConfig(() => {
       },
     },
     plugins: [
-      react(),
       MillionLint.vite(),
       viteSingleFile(),
       legacy({
@@ -129,5 +144,14 @@ export default defineConfig(() => {
         },
       }),
     ],
-  };
+    define: {
+      global: "globalThis",
+    },
+    server: {
+      headers: {
+        "Cross-Origin-Embedder-Policy": "require-corp",
+        "Cross-Origin-Opener-Policy": "same-origin",
+      },
+    },
+  },
 });
