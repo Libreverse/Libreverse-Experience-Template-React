@@ -1,3 +1,4 @@
+// @ts-check
 import js from "@eslint/js";
 import { FlatCompat } from "@eslint/eslintrc";
 import typescript from "@typescript-eslint/eslint-plugin";
@@ -103,8 +104,8 @@ export default [
   },
   {
     files: [
-      "**/*.test.{js,jsx,ts,tsx}",
-      "**/__tests__/**/*.{js,jsx,ts,tsx}",
+      "**/*.test.{ts,tsx}",
+      "**/__tests__/**/*.{ts,tsx}",
       "**/test-setup.*.{js,ts}",
     ],
     languageOptions: {

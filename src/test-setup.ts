@@ -1,11 +1,11 @@
 // Bun test setup file for DOM environment and mocks
-import { JSDOM } from 'jsdom';
+import { JSDOM } from "jsdom";
 
 // Setup DOM environment for testing
-const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
-  url: 'http://localhost',
+const dom = new JSDOM("<!DOCTYPE html><html><body></body></html>", {
+  url: "http://localhost",
   pretendToBeVisual: true,
-  resources: 'usable'
+  resources: "usable",
 });
 
 // Assign DOM globals
@@ -26,9 +26,9 @@ global.WebSocket = class MockWebSocket {
   onmessage?: (event: any) => void;
   onerror?: () => void;
   readyState = 1;
-  
+
   constructor() {}
-  
+
   send() {}
   close() {}
 } as any;
@@ -38,15 +38,25 @@ global.RTCPeerConnection = class MockRTCPeerConnection {
   onicecandidate?: () => void;
   ondatachannel?: () => void;
   onconnectionstatechange?: () => void;
-  connectionState = 'new';
-  
+  connectionState = "new";
+
   constructor() {}
-  
-  createOffer() { return Promise.resolve({}); }
-  createAnswer() { return Promise.resolve({}); }
-  setLocalDescription() { return Promise.resolve(); }
-  setRemoteDescription() { return Promise.resolve(); }
-  addIceCandidate() { return Promise.resolve(); }
+
+  createOffer() {
+    return Promise.resolve({});
+  }
+  createAnswer() {
+    return Promise.resolve({});
+  }
+  setLocalDescription() {
+    return Promise.resolve();
+  }
+  setRemoteDescription() {
+    return Promise.resolve();
+  }
+  addIceCandidate() {
+    return Promise.resolve();
+  }
   createDataChannel() {
     return {
       onopen: null,
@@ -54,7 +64,7 @@ global.RTCPeerConnection = class MockRTCPeerConnection {
       onclose: null,
       send: () => {},
       close: () => {},
-      readyState: 'open'
+      readyState: "open",
     };
   }
   close() {}

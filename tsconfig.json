@@ -2,12 +2,8 @@
   "compilerOptions": {
     "target": "ESNext",
     "useDefineForClassFields": true,
-    "lib": [
-      "DOM",
-      "DOM.Iterable",
-      "ESNext"
-    ],
-    "allowJs": true,
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "allowJs": false,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -20,18 +16,12 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "paths": {
-      "@react-three/fiber/jsx-runtime": [
-        "./src/types/r3f-jsx-runtime.d.ts"
-      ]
+      "@react-three/fiber/jsx-runtime": ["./src/types/r3f-jsx-runtime.d.ts"]
     },
     "baseUrl": ".",
-    "types": [
-      "react",
-      "react-dom",
-      "node"
-    ]
+    "types": ["react", "react-dom", "node"],
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
   },
-  "include": [
-    "src"
-  ]
+  "include": ["src"]
 }

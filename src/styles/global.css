@@ -39,10 +39,10 @@
   }
 
   /* Make sure all interactive UI elements are above the 3D scene */
-  button, 
-  input, 
-  select, 
-  textarea, 
+  button,
+  input,
+  select,
+  textarea,
   .ui-interactive {
     @apply pointer-events-auto z-[1000];
   }

@@ -15,22 +15,38 @@ import {
 /* TODO: swap these minimal stubs with the real implementations when available. */
 class ACESToneMap extends Effect {
   constructor() {
-    super("ACESFilmicToneMapping", "void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) { outputColor = inputColor; }", { blendFunction: BlendFunction.NORMAL });
+    super(
+      "ACESFilmicToneMapping",
+      "void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) { outputColor = inputColor; }",
+      { blendFunction: BlendFunction.NORMAL },
+    );
   }
 }
 class ContactShadowPass extends Effect {
   constructor() {
-    super("ContactShadowPass", "void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) { outputColor = inputColor; }", { blendFunction: BlendFunction.NORMAL });
+    super(
+      "ContactShadowPass",
+      "void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) { outputColor = inputColor; }",
+      { blendFunction: BlendFunction.NORMAL },
+    );
   }
 }
 class SSRPass extends Effect {
   constructor() {
-    super("SSRPass", "void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) { outputColor = inputColor; }", { blendFunction: BlendFunction.NORMAL });
+    super(
+      "SSRPass",
+      "void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) { outputColor = inputColor; }",
+      { blendFunction: BlendFunction.NORMAL },
+    );
   }
 }
 class MotionBlurPass extends Effect {
   constructor() {
-    super("MotionBlurPass", "void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) { outputColor = inputColor; }", { blendFunction: BlendFunction.NORMAL });
+    super(
+      "MotionBlurPass",
+      "void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) { outputColor = inputColor; }",
+      { blendFunction: BlendFunction.NORMAL },
+    );
   }
 }
 /* ------------------------------------------------------------------------------- */
@@ -66,13 +82,11 @@ const curvatureFragmentShader = `
 `;
 
 class CurvatureEffect extends Effect {
-  constructor(
-    curveStrength: number = EFFECTS_CONFIG.curvature.strength
-  ) {
+  constructor(curveStrength: number = EFFECTS_CONFIG.curvature.strength) {
     super("Curvature", curvatureFragmentShader, {
       uniforms: new Map([
         ["curveStrength", { value: curveStrength }],
-        ["depthTexture",  { value: null         }], // Injected by postprocessing
+        ["depthTexture", { value: null }], // Injected by postprocessing
       ]),
     });
   }
@@ -85,7 +99,9 @@ class CurvatureEffect extends Effect {
 
   // Setters for dynamic adjustment
   set curveStrength(v: number) {
-    const uniform = this.uniforms.get("curveStrength") as { value: number } | undefined;
+    const uniform = this.uniforms.get("curveStrength") as
+      | { value: number }
+      | undefined;
     if (uniform) uniform.value = v;
   }
 }
@@ -97,12 +113,15 @@ interface CurvaturePassProps {
 const CurvaturePass: React.FC<CurvaturePassProps> = ({
   curveStrength = EFFECTS_CONFIG.curvature.strength,
 }) => {
-  const effect = useMemo(() => new CurvatureEffect(curveStrength), [curveStrength]);
-  
-  React.useEffect(() => { 
-    effect.curveStrength = curveStrength; 
+  const effect = useMemo(
+    () => new CurvatureEffect(curveStrength),
+    [curveStrength],
+  );
+
+  React.useEffect(() => {
+    effect.curveStrength = curveStrength;
   }, [effect, curveStrength]);
-  
+
   return <primitive object={effect} />;
 };
 /* ------------------------------------------------------------------------------- */
@@ -114,18 +133,18 @@ type Q = "low" | "medium" | "high" | "ultra";
 const EFFECTS_CONFIG = {
   // Quality-based settings
   quality: {
-    low:    { ssao: { samples: 6,  radius: 8,  intensity: 0.4 }, bloom: 0.4  },
-    medium: { ssao: { samples: 8,  radius: 10, intensity: 0.5 }, bloom: 0.55 },
-    high:   { ssao: { samples: 11, radius: 12, intensity: 0.6 }, bloom: 0.7  },
-    ultra:  { ssao: { samples: 16, radius: 15, intensity: 0.8 }, bloom: 0.9  },
+    low: { ssao: { samples: 6, radius: 8, intensity: 0.4 }, bloom: 0.4 },
+    medium: { ssao: { samples: 8, radius: 10, intensity: 0.5 }, bloom: 0.55 },
+    high: { ssao: { samples: 11, radius: 12, intensity: 0.6 }, bloom: 0.7 },
+    ultra: { ssao: { samples: 16, radius: 15, intensity: 0.8 }, bloom: 0.9 },
   },
-  
+
   // SSAO settings
   ssao: {
     luminanceInfluence: 0.6,
     color: "black",
   },
-  
+
   // Depth of Field settings
   depthOfField: {
     ultra: {
@@ -140,32 +159,32 @@ const EFFECTS_CONFIG = {
     },
     height: 480,
   },
-  
+
   // Bloom settings
   bloom: {
     luminanceThreshold: 0.25,
     mipmapBlur: true,
   },
-  
+
   // Stylized effects
   chromaticAberration: {
     offset: [0.001, 0.001] as [number, number],
   },
-  
+
   vignette: {
     eskil: false,
     offset: 0.1,
     darkness: 0.7,
   },
-  
+
   noise: {
     lowQuality: 0.02,
     normalQuality: 0.03,
   },
-  
+
   // Curvature settings
   curvature: {
-    strength: 0.4,  // 0 = flat, 1 = full screen shift.
+    strength: 0.4, // 0 = flat, 1 = full screen shift.
   },
 } as const;
 
@@ -193,32 +212,66 @@ export function EffectsPipeline({
       <EffectComposer enableNormalPass depthBuffer multisampling={0}>
         {/* --- physically-based passes --- */}
         <primitive object={cShadow} />
-        <SSAO {...q.ssao} luminanceInfluence={EFFECTS_CONFIG.ssao.luminanceInfluence} color={EFFECTS_CONFIG.ssao.color} />
+        <SSAO
+          {...q.ssao}
+          luminanceInfluence={EFFECTS_CONFIG.ssao.luminanceInfluence}
+          color={EFFECTS_CONFIG.ssao.color}
+        />
         <DepthOfField
-          focusDistance={quality === "ultra" ? EFFECTS_CONFIG.depthOfField.ultra.focusDistance : EFFECTS_CONFIG.depthOfField.normal.focusDistance}
-          focalLength={quality === "ultra" ? EFFECTS_CONFIG.depthOfField.ultra.focalLength : EFFECTS_CONFIG.depthOfField.normal.focalLength}
-          bokehScale={quality === "ultra" ? EFFECTS_CONFIG.depthOfField.ultra.bokehScale : EFFECTS_CONFIG.depthOfField.normal.bokehScale}
+          focusDistance={
+            quality === "ultra"
+              ? EFFECTS_CONFIG.depthOfField.ultra.focusDistance
+              : EFFECTS_CONFIG.depthOfField.normal.focusDistance
+          }
+          focalLength={
+            quality === "ultra"
+              ? EFFECTS_CONFIG.depthOfField.ultra.focalLength
+              : EFFECTS_CONFIG.depthOfField.normal.focalLength
+          }
+          bokehScale={
+            quality === "ultra"
+              ? EFFECTS_CONFIG.depthOfField.ultra.bokehScale
+              : EFFECTS_CONFIG.depthOfField.normal.bokehScale
+          }
           height={EFFECTS_CONFIG.depthOfField.height}
         />
         <primitive object={quality === "ultra" ? ssr : cShadow} />
         <primitive object={quality === "ultra" ? motionBlur : cShadow} />
-        <Bloom mipmapBlur={EFFECTS_CONFIG.bloom.mipmapBlur} intensity={q.bloom} luminanceThreshold={EFFECTS_CONFIG.bloom.luminanceThreshold} />
+        <Bloom
+          mipmapBlur={EFFECTS_CONFIG.bloom.mipmapBlur}
+          intensity={q.bloom}
+          luminanceThreshold={EFFECTS_CONFIG.bloom.luminanceThreshold}
+        />
         <primitive object={aces} />
 
         {/* --- stylized passes (order preserved) --- */}
         <ChromaticAberration
-          offset={enableStylizedEffects ? EFFECTS_CONFIG.chromaticAberration.offset : [0, 0]}
+          offset={
+            enableStylizedEffects
+              ? EFFECTS_CONFIG.chromaticAberration.offset
+              : [0, 0]
+          }
         />
         <Vignette
           eskil={EFFECTS_CONFIG.vignette.eskil}
           offset={enableStylizedEffects ? EFFECTS_CONFIG.vignette.offset : 0}
-          darkness={enableStylizedEffects ? EFFECTS_CONFIG.vignette.darkness : 0}
+          darkness={
+            enableStylizedEffects ? EFFECTS_CONFIG.vignette.darkness : 0
+          }
         />
-        <Noise opacity={quality === "low" ? EFFECTS_CONFIG.noise.lowQuality : EFFECTS_CONFIG.noise.normalQuality} />
+        <Noise
+          opacity={
+            quality === "low"
+              ? EFFECTS_CONFIG.noise.lowQuality
+              : EFFECTS_CONFIG.noise.normalQuality
+          }
+        />
 
         {/* --- curvature LAST so other passes work in flat space --- */}
         <CurvaturePass
-          curveStrength={enableCurvature ? EFFECTS_CONFIG.curvature.strength : 0.0}
+          curveStrength={
+            enableCurvature ? EFFECTS_CONFIG.curvature.strength : 0.0
+          }
         />
       </EffectComposer>
     </Suspense>

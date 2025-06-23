@@ -52,9 +52,15 @@ interface SafeInteractiveProps {
   onSelectEnd?: () => void;
 }
 
-const SafeInteractive: FC<SafeInteractiveProps> = ({ children, onHover, onBlur, onSelect, onSelectEnd }) => {
+const SafeInteractive: FC<SafeInteractiveProps> = ({
+  children,
+  onHover,
+  onBlur,
+  onSelect,
+  onSelectEnd,
+}) => {
   const xr = useXR();
-  
+
   // In XR mode, use Interactive, otherwise use regular mesh events
   if (xr.session) {
     return (
@@ -68,7 +74,7 @@ const SafeInteractive: FC<SafeInteractiveProps> = ({ children, onHover, onBlur, 
       </Interactive>
     );
   }
-  
+
   // Non-XR mode: add mouse events directly to the mesh
   return (
     <group
@@ -436,44 +442,48 @@ const Scene: FC = () => {
     // Smarter pointer lock that only activates when clicking on the 3D scene
     const autoLock = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      
+
       // Don't lock if clicking on UI elements (buttons, overlays, etc.)
-      if (target && (
-        target.closest('.vr-button') ||
-        target.closest('.ui-overlay') ||
-        target.closest('button') ||
-        target.closest('input') ||
-        target.closest('select') ||
-        target.closest('textarea') ||
-        target.closest('[data-no-pointer-lock]') ||
-        target.tagName === 'BUTTON' ||
-        target.tagName === 'INPUT' ||
-        target.tagName === 'SELECT' ||
-        target.tagName === 'TEXTAREA'
-      )) {
+      if (
+        target &&
+        (target.closest(".vr-button") ||
+          target.closest(".ui-overlay") ||
+          target.closest("button") ||
+          target.closest("input") ||
+          target.closest("select") ||
+          target.closest("textarea") ||
+          target.closest("[data-no-pointer-lock]") ||
+          target.tagName === "BUTTON" ||
+          target.tagName === "INPUT" ||
+          target.tagName === "SELECT" ||
+          target.tagName === "TEXTAREA")
+      ) {
         return;
       }
 
       // Only lock if we're not already locked and clicking on the canvas area
-      if (document.pointerLockElement === null && (
-        target.tagName === 'CANVAS' || 
-        target.closest('canvas') ||
-        !target.closest('.ui-overlay, .vr-button, button, input, select, textarea')
-      )) {
+      if (
+        document.pointerLockElement === null &&
+        (target.tagName === "CANVAS" ||
+          target.closest("canvas") ||
+          !target.closest(
+            ".ui-overlay, .vr-button, button, input, select, textarea",
+          ))
+      ) {
         controlsRef.current?.lock?.();
       }
     };
 
     // Add escape key handler to unlock pointer
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && document.pointerLockElement) {
+      if (event.key === "Escape" && document.pointerLockElement) {
         document.exitPointerLock();
       }
     };
 
     window.addEventListener("mousedown", autoLock);
     window.addEventListener("keydown", handleEscape);
-    
+
     return () => {
       window.removeEventListener("mousedown", autoLock);
       window.removeEventListener("keydown", handleEscape);

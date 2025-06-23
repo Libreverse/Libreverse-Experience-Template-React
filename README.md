@@ -76,7 +76,7 @@ The project includes a `bunfig.toml` file for Bun-specific configuration:
 ## Available Scripts
 
 - `bun run dev` - Start development server with hot reload
-- `bun run build` - Build for production 
+- `bun run build` - Build for production
 - `bun run preview` - Preview production build
 - `bun run test` - Run test suite
 - `bun run lint` - Run ESLint

@@ -1,6 +1,6 @@
-import { defineConfig } from 'astro/config';
-import react from '@astrojs/react';
-import tailwind from '@astrojs/tailwind';
+import { defineConfig } from "astro/config";
+import react from "@astrojs/react";
+import tailwind from "@astrojs/tailwind";
 import MillionLint from "@million/lint";
 import legacy from "@vitejs/plugin-legacy";
 import posthtml from "rollup-plugin-posthtml";
@@ -12,13 +12,10 @@ import tailwindcss from "tailwindcss";
 
 // https://astro.build/config
 export default defineConfig({
-  integrations: [
-    react(), 
-    tailwind()
-  ],
-  output: 'static',
+  integrations: [react(), tailwind()],
+  output: "static",
   build: {
-    inlineStylesheets: 'always',
+    inlineStylesheets: "always",
   },
   vite: {
     resolve: {
