@@ -1,0 +1,12 @@
+[test]
+# Use setup file for test configuration
+preload = ["./src/test-setup.ts"]
+
+# Test file patterns
+testFiles = ["src/**/*.test.{ts,tsx,js,jsx}"]
+
+# Enable coverage
+coverage = true
+
+# Timeout for tests
+timeout = 10000

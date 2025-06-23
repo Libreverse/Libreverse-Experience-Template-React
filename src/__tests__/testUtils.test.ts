@@ -1,4 +1,6 @@
 // Test utilities and helper functions
+import { describe, it, expect } from "bun:test";
+
 export const createMockPlayerState = (overrides = {}) => ({
   id: "test-player",
   position: [0, 1, 0] as [number, number, number],

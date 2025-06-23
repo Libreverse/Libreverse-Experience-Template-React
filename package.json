@@ -5,16 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "bun dev-server.ts & bunx vite dev",
-    "build": "vite build",
-    "preview": "vite preview",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "test:ci": "jest --ci --coverage --watchAll=false"
+    "build": "bunx vite build",
+    "preview": "bunx vite preview",
+    "lint": "bunx eslint . --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "bunx eslint . --ext .js,.jsx,.ts,.tsx --fix",
+    "format": "bunx prettier --write .",
+    "format:check": "bunx prettier --check .",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "test:coverage": "bun test --coverage"
   },
   "dependencies": {
     "@million/lint": "^1.0.14",
@@ -42,15 +41,10 @@
     "vite-plugin-singlefile": "^2.2.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.27.4",
-    "@babel/preset-env": "^7.27.2",
-    "@babel/preset-react": "^7.27.1",
-    "@babel/preset-typescript": "^7.27.1",
     "@eslint/eslintrc": "^3.3.1",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
-    "@types/jest": "^30.0.0",
     "@types/node": "^24.0.3",
     "@types/rails__actioncable": "^6.1.11",
     "@types/react": "^19.1.8",
@@ -58,7 +52,6 @@
     "@types/three": "^0.177.0",
     "@typescript-eslint/eslint-plugin": "^8.34.1",
     "@typescript-eslint/parser": "^8.34.1",
-    "babel-jest": "^30.0.2",
     "eslint": "^8.8.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-config-standard-react": "^13.0.0",
@@ -66,13 +59,11 @@
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^4.6.0",
-    "identity-obj-proxy": "^3.0.0",
-    "jest": "^30.0.2",
-    "jest-environment-jsdom": "^30.0.2",
-    "jest-transform-stub": "^2.0.0",
     "jsdom": "^26.1.0",
     "prettier": "^3.5.3",
-    "ts-jest": "^29.4.0",
     "typescript": "^5.8.3"
-  }
+  },
+  "trustedDependencies": [
+    "core-js"
+  ]
 }

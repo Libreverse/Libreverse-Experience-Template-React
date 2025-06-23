@@ -3,6 +3,8 @@
  * Testing the basic functionality without complex 3D mocking
  */
 
+import { describe, it, expect } from "bun:test";
+
 describe("App Component - Basic Tests", () => {
   it("should pass basic test", () => {
     expect(true).toBe(true);

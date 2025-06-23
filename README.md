@@ -16,8 +16,7 @@ A template for creating 3D metaverse experiences using React, React Three Fiber,
 
 ## Prerequisites
 
-- Node.js 16.0 or higher
-- npm or yarn
+- [Bun](https://bun.sh/) 1.0 or higher
 - A modern web browser with WebGL support
 - (Optional) A WebXR-compatible VR headset
 
@@ -33,21 +32,55 @@ A template for creating 3D metaverse experiences using React, React Three Fiber,
 2. Install dependencies:
 
    ```bash
-   npm install
+   bun install
    ```
 
 3. Start the development server:
 
    ```bash
-   npm run dev
+   bun run dev
    ```
 
 4. Build for production:
    ```bash
-   npm run build
+   bun run build
    ```
 
 The production build will create a single `index.html` file in the `dist` directory with all assets inlined.
+
+## Testing
+
+This project uses Bun's built-in test runner for fast, zero-configuration testing:
+
+```bash
+# Run all tests
+bun test
+
+# Run tests in watch mode
+bun test --watch
+
+# Run tests with coverage
+bun test --coverage
+```
+
+Test files are located in `src/__tests__/` and follow the pattern `*.test.{ts,tsx}`.
+
+## Bun Configuration
+
+The project includes a `bunfig.toml` file for Bun-specific configuration:
+
+- Test setup and DOM environment configuration
+- Coverage reporting
+- Test file patterns and timeouts
+
+## Available Scripts
+
+- `bun run dev` - Start development server with hot reload
+- `bun run build` - Build for production 
+- `bun run preview` - Preview production build
+- `bun run test` - Run test suite
+- `bun run lint` - Run ESLint
+- `bun run format` - Format code with Prettier
 
 ## Project Structure
 
