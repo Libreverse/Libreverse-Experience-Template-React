@@ -1,96 +1,225 @@
-import { useMemo, Suspense } from "react";
+import { Suspense, useMemo } from "react";
 import React from "react";
-import { Effect } from "postprocessing";
+import { BlendFunction, Effect } from "postprocessing";
 import {
   EffectComposer,
-  DepthOfField,
-  Bloom,
-  ToneMapping,
   SSAO,
-  HueSaturation,
-  BrightnessContrast,
-  Vignette,
+  Bloom,
   Noise,
+  DepthOfField,
   ChromaticAberration,
+  Vignette,
 } from "@react-three/postprocessing";
 
-// Earth curvature fragment shader - simulates standing on a large sphere
-const curvatureFragmentShader = `
-  uniform float curveAmount;
+/* ---------- placeholder passes -------------------------------------------------- */
+/* TODO: swap these minimal stubs with the real implementations when available. */
+class ACESToneMap extends Effect {
+  constructor() {
+    super("ACESFilmicToneMapping", "void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) { outputColor = inputColor; }", { blendFunction: BlendFunction.NORMAL });
+  }
+}
+class ContactShadowPass extends Effect {
+  constructor() {
+    super("ContactShadowPass", "void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) { outputColor = inputColor; }", { blendFunction: BlendFunction.NORMAL });
+  }
+}
+class SSRPass extends Effect {
+  constructor() {
+    super("SSRPass", "void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) { outputColor = inputColor; }", { blendFunction: BlendFunction.NORMAL });
+  }
+}
+class MotionBlurPass extends Effect {
+  constructor() {
+    super("MotionBlurPass", "void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) { outputColor = inputColor; }", { blendFunction: BlendFunction.NORMAL });
+  }
+}
+/* ------------------------------------------------------------------------------- */
 
-  void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
-    vec2 coords = uv;
+/* ---------- curvature pass --------------------------------------------------------- */
+// ...existing code...
+const curvatureFragmentShader = `
+  uniform float curveStrength;
+  uniform float safeArea;
+
+  void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outColor) {
+    float x = uv.x - 0.5;
+    float y = uv.y - 0.5;
     
-    // Calculate horizontal distance from center (represents distance from camera)
-    float distanceFromCenter = abs(coords.x - 0.5) * 2.0;
+    // Calculate curvature based on horizontal distance only
+    float radius = 1.0 / max(curveStrength, 0.0001);
+    float curve = radius - sqrt(radius * radius - x * x);
     
-    // Apply downward curve based on distance - simulates earth curvature
-    // Objects further from camera (horizontally) appear lower due to earth's curve
-    float curvature = curveAmount * distanceFromCenter * distanceFromCenter;
-    coords.y += curvature;
+    // Edge fade to prevent artifacts
+    float edgeFadeX = smoothstep(0.48, 0.5, abs(x));
+    float edgeFadeY = smoothstep(0.48, 0.5, abs(y));
+    float edgeFade = max(edgeFadeX, edgeFadeY);
     
-    // Sample the texture with curved coordinates
-    vec4 color;
-    if (coords.x >= 0.0 && coords.x <= 1.0 && coords.y >= 0.0 && coords.y <= 1.0) {
-      color = texture2D(inputBuffer, coords);
-    } else {
-      // For out-of-bounds, sample the nearest edge pixel
-      vec2 clampedUV = clamp(coords, 0.001, 0.999);
-      color = texture2D(inputBuffer, clampedUV);
-    }
+    // Apply vertical displacement based on horizontal position
+    float curvedY = mix(uv.y, uv.y + curve, 1.0 - edgeFade);
     
-    outputColor = color;
+    // Clamp to prevent sampling outside texture
+    float newY = clamp(curvedY, 0.0, 1.0);
+    float newX = clamp(uv.x, 0.0, 1.0);
+    
+    outColor = texture2D(inputBuffer, vec2(newX, newY));
   }
 `;
 
-// Curvature Effect class that properly extends postprocessing's Effect
 class CurvatureEffect extends Effect {
-  constructor(curveAmount = 0.04) {
-    super("CurvatureEffect", curvatureFragmentShader, {
+  constructor(
+    curveStrength: number = EFFECTS_CONFIG.curvature.strength
+  ) {
+    super("Curvature", curvatureFragmentShader, {
       uniforms: new Map([
-        ["curveAmount", { value: curveAmount }],
+        ["curveStrength", { value: curveStrength }],
+        ["depthTexture",  { value: null         }], // Injected by postprocessing
       ]),
     });
   }
 
-  update(_renderer: unknown, _inputBuffer: unknown, _deltaTime: number) {
-    // Effect update logic if needed
+  // Required by postprocessing to inject depth texture
+  setDepthTexture(texture: unknown, _size: unknown) {
+    const uniform = this.uniforms.get("depthTexture") as { value: unknown };
+    uniform.value = texture;
+  }
+
+  // Setters for dynamic adjustment
+  set curveStrength(v: number) {
+    const uniform = this.uniforms.get("curveStrength") as { value: number } | undefined;
+    if (uniform) uniform.value = v;
   }
 }
 
-// React component wrapper for the CurvatureEffect
 interface CurvaturePassProps {
-  curveAmount?: number;
+  curveStrength?: number;
 }
 
-const CurvaturePass: React.FC<CurvaturePassProps> = ({ curveAmount }) => {
-  const effect = useMemo(() => new CurvatureEffect(curveAmount), [curveAmount]);
+const CurvaturePass: React.FC<CurvaturePassProps> = ({
+  curveStrength = EFFECTS_CONFIG.curvature.strength,
+}) => {
+  const effect = useMemo(() => new CurvatureEffect(curveStrength), [curveStrength]);
+  
+  React.useEffect(() => { 
+    effect.curveStrength = curveStrength; 
+  }, [effect, curveStrength]);
+  
   return <primitive object={effect} />;
 };
+/* ------------------------------------------------------------------------------- */
 
-export function EffectsPipeline({ curveAmount: _curveAmount = 0.04 }) {
+/* ---------- centralized configuration -------------------------------------------- */
+type Q = "low" | "medium" | "high" | "ultra";
+
+// Centralized effects configuration - all tunable values in one place
+const EFFECTS_CONFIG = {
+  // Quality-based settings
+  quality: {
+    low:    { ssao: { samples: 6,  radius: 8,  intensity: 0.4 }, bloom: 0.4  },
+    medium: { ssao: { samples: 8,  radius: 10, intensity: 0.5 }, bloom: 0.55 },
+    high:   { ssao: { samples: 11, radius: 12, intensity: 0.6 }, bloom: 0.7  },
+    ultra:  { ssao: { samples: 16, radius: 15, intensity: 0.8 }, bloom: 0.9  },
+  },
+  
+  // SSAO settings
+  ssao: {
+    luminanceInfluence: 0.6,
+    color: "black",
+  },
+  
+  // Depth of Field settings
+  depthOfField: {
+    ultra: {
+      focusDistance: 0.02,
+      focalLength: 0.025,
+      bokehScale: 2,
+    },
+    normal: {
+      focusDistance: 1000,
+      focalLength: 0.1,
+      bokehScale: 0,
+    },
+    height: 480,
+  },
+  
+  // Bloom settings
+  bloom: {
+    luminanceThreshold: 0.25,
+    mipmapBlur: true,
+  },
+  
+  // Stylized effects
+  chromaticAberration: {
+    offset: [0.001, 0.001] as [number, number],
+  },
+  
+  vignette: {
+    eskil: false,
+    offset: 0.1,
+    darkness: 0.7,
+  },
+  
+  noise: {
+    lowQuality: 0.02,
+    normalQuality: 0.03,
+  },
+  
+  // Curvature settings
+  curvature: {
+    strength: 0.4,  // 0 = flat, 1 = full screen shift.
+  },
+} as const;
+
+interface Props {
+  quality?: Q;
+  enableStylizedEffects?: boolean;
+  enableCurvature?: boolean;
+}
+
+export function EffectsPipeline({
+  quality = "ultra",
+  enableStylizedEffects = true,
+  enableCurvature = true,
+}: Props) {
+  const q = EFFECTS_CONFIG.quality[quality];
+
+  // Memoized placeholder passes
+  const aces = useMemo(() => new ACESToneMap(), []);
+  const cShadow = useMemo(() => new ContactShadowPass(), []);
+  const ssr = useMemo(() => new SSRPass(), []);
+  const motionBlur = useMemo(() => new MotionBlurPass(), []);
+
   return (
     <Suspense fallback={null}>
-      <EffectComposer enableNormalPass>
-        {/* Early pipeline effects */}
-        <SSAO samples={11} radius={12} intensity={0.5} luminanceInfluence={0.6} color="black" />
-        <DepthOfField focusDistance={0.02} focalLength={0.025} bokehScale={2} height={480} />
-        
-        {/* Lighting and glow effects */}
-        <Bloom luminanceThreshold={0.2} luminanceSmoothing={0.9} intensity={0.7} />
-        
-        {/* Color grading and tone mapping */}
-        <ToneMapping mode={1} />
-        <HueSaturation hue={0} saturation={0.1} />
-        <BrightnessContrast brightness={0.01} contrast={0.0} />
-        
-        {/* Distortion and stylization effects */}
-        <CurvaturePass curveAmount={_curveAmount} />
-        <ChromaticAberration offset={[0.001, 0.001]} />
-        <Vignette eskil={false} offset={0.1} darkness={0.7} />
-        
-        {/* Noise effects (should be last) */}
-        <Noise opacity={0.03} />
+      <EffectComposer enableNormalPass depthBuffer multisampling={0}>
+        {/* --- physically-based passes --- */}
+        <primitive object={cShadow} />
+        <SSAO {...q.ssao} luminanceInfluence={EFFECTS_CONFIG.ssao.luminanceInfluence} color={EFFECTS_CONFIG.ssao.color} />
+        <DepthOfField
+          focusDistance={quality === "ultra" ? EFFECTS_CONFIG.depthOfField.ultra.focusDistance : EFFECTS_CONFIG.depthOfField.normal.focusDistance}
+          focalLength={quality === "ultra" ? EFFECTS_CONFIG.depthOfField.ultra.focalLength : EFFECTS_CONFIG.depthOfField.normal.focalLength}
+          bokehScale={quality === "ultra" ? EFFECTS_CONFIG.depthOfField.ultra.bokehScale : EFFECTS_CONFIG.depthOfField.normal.bokehScale}
+          height={EFFECTS_CONFIG.depthOfField.height}
+        />
+        <primitive object={quality === "ultra" ? ssr : cShadow} />
+        <primitive object={quality === "ultra" ? motionBlur : cShadow} />
+        <Bloom mipmapBlur={EFFECTS_CONFIG.bloom.mipmapBlur} intensity={q.bloom} luminanceThreshold={EFFECTS_CONFIG.bloom.luminanceThreshold} />
+        <primitive object={aces} />
+
+        {/* --- stylized passes (order preserved) --- */}
+        <ChromaticAberration
+          offset={enableStylizedEffects ? EFFECTS_CONFIG.chromaticAberration.offset : [0, 0]}
+        />
+        <Vignette
+          eskil={EFFECTS_CONFIG.vignette.eskil}
+          offset={enableStylizedEffects ? EFFECTS_CONFIG.vignette.offset : 0}
+          darkness={enableStylizedEffects ? EFFECTS_CONFIG.vignette.darkness : 0}
+        />
+        <Noise opacity={quality === "low" ? EFFECTS_CONFIG.noise.lowQuality : EFFECTS_CONFIG.noise.normalQuality} />
+
+        {/* --- curvature LAST so other passes work in flat space --- */}
+        <CurvaturePass
+          curveStrength={enableCurvature ? EFFECTS_CONFIG.curvature.strength : 0.0}
+        />
       </EffectComposer>
     </Suspense>
   );

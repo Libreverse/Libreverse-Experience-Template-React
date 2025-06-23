@@ -1,3 +1,6 @@
+import { extend } from "@react-three/fiber";
+import * as THREE from "three";
+extend(THREE);
 import { Physics, useBox, usePlane, useSphere } from "@react-three/cannon";
 import { Grid, Html, PointerLockControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
@@ -42,7 +45,7 @@ interface BoxProps {
 const DEFAULT_MATERIAL = { friction: 0.6, restitution: 0.2 };
 
 const Box: FC<BoxProps> = ({ color, position, scale = 1 }) => {
-  const [ref] = useBox<Mesh>(() => ({
+  const [ref] = useBox<THREE.Object3D>(() => ({
     mass: 2, // more realistic mass
     position,
     args: [scale, scale, scale],
@@ -75,7 +78,7 @@ interface SphereProps {
 }
 
 const Sphere: FC<SphereProps> = ({ position }) => {
-  const [ref] = useSphere<Mesh>(() => ({
+  const [ref] = useSphere<THREE.Object3D>(() => ({
     mass: 1,
     position,
     args: [0.5],
@@ -104,7 +107,7 @@ const Sphere: FC<SphereProps> = ({ position }) => {
 };
 
 const Floor: FC = () => {
-  const [ref] = usePlane<Mesh>(() => ({
+  const [ref] = usePlane<THREE.Object3D>(() => ({
     rotation: [-Math.PI / 2, 0, 0],
     position: [0, 0, 0],
     type: "Static",
@@ -135,7 +138,7 @@ const Player: FC<PlayerProps> = ({
   const { camera } = useThree();
   // Add grounded state
   const [grounded, setGrounded] = useState(false);
-  const [, api] = useSphere<Mesh>(() => ({
+  const [, api] = useSphere<THREE.Object3D>(() => ({
     mass: 1,
     position: [0, 1, 5],
     args: [0.5],
