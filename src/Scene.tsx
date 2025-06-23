@@ -6,10 +6,8 @@ import { Grid, Html, PointerLockControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Interactive, useXR } from "@react-three/xr";
 import { type FC, useEffect, useRef, useState } from "react";
-import type { Mesh as ThreeMesh } from "three/src/objects/Mesh.js";
 import React from "react";
-type Mesh = ThreeMesh;
-import { Vector3 } from "three/src/math/Vector3.js";
+type Mesh = THREE.Mesh;
 import type { PointerLockControls as PointerLockControlsImpl } from "three-stdlib";
 import type { GameObjectUpdate, PlayerState } from "./p2p/types";
 import { useHotKeys } from "./HotKeysProvider";
@@ -228,15 +226,15 @@ const Player: FC<PlayerProps> = ({
 
   useFrame(() => {
     // Build movement direction based on camera orientation
-    const forward = new Vector3();
+    const forward = new THREE.Vector3();
     camera.getWorldDirection(forward);
     forward.y = 0;
     forward.normalize();
 
-    const right = new Vector3();
-    right.crossVectors(forward, new Vector3(0, 1, 0)).normalize();
+    const right = new THREE.Vector3();
+    right.crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
 
-    const moveDir = new Vector3();
+    const moveDir = new THREE.Vector3();
     if (keys.w) moveDir.add(forward);
     if (keys.s) moveDir.sub(forward);
     if (keys.d) moveDir.add(right);

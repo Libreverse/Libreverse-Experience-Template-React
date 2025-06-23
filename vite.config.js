@@ -5,11 +5,51 @@ import cssnano from "cssnano";
 import postcssPresetEnv from "postcss-preset-env";
 import tailwindcss from "tailwindcss";
 import { defineConfig } from "vite";
-import { ViteMinifyPlugin } from "vite-plugin-minify";
+import posthtml from "rollup-plugin-posthtml";
+import htmlnano from "htmlnano";
 import { viteSingleFile } from "vite-plugin-singlefile";
 
 export default defineConfig(() => {
   return {
+    resolve: {
+      alias: {
+        // Force all three.js imports to use the same instance
+        three: "three",
+        // Ensure sub-modules also resolve to the main three package
+        "three/": "three/",
+      },
+      dedupe: ["three", "@types/three"],
+    },
+    optimizeDeps: {
+      include: [
+        "three",
+        "@react-three/fiber",
+        "@react-three/drei",
+        "@react-three/cannon",
+        "@react-three/xr",
+        "@react-three/postprocessing",
+      ],
+      exclude: ["three/examples/jsm/*"],
+    },
+    build: {
+      rollupOptions: {
+        external: [],
+        plugins: [
+          posthtml([
+            htmlnano({
+              collapseWhitespace: "conservative",
+              removeComments: "safe",
+              removeEmptyAttributes: true,
+              removeRedundantAttributes: true,
+              collapseBooleanAttributes: true,
+              removeAttributeQuotes: false,
+              minifyJs: true,
+              minifyCss: true,
+            }),
+          ]),
+        ],
+      },
+    },
     test: {
       environment: "jsdom",
       globals: true,
@@ -38,7 +78,6 @@ export default defineConfig(() => {
     plugins: [
       react(),
       MillionLint.vite(),
-      ViteMinifyPlugin({}),
       viteSingleFile(),
       legacy({
         renderLegacyChunks: true,

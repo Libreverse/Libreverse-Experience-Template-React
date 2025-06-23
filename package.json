@@ -28,15 +28,16 @@
     "cannon-es": "^0.20.0",
     "cssnano": "^7.0.7",
     "cssnano-preset-advanced": "^7.0.7",
+    "htmlnano": "^2.1.2",
     "postcss-preset-env": "^10.2.3",
     "postprocessing": "^6.37.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hotkeys": "^2.0.0",
+    "rollup-plugin-posthtml": "^1.1.0",
     "three": "^0.177.0",
     "three-stdlib": "^2.36.0",
     "vite": "^5.4.19",
-    "vite-plugin-minify": "^2.1.0",
     "vite-plugin-singlefile": "^2.2.0"
   },
   "devDependencies": {
@@ -62,6 +63,9 @@
     "prettier": "^3.5.3",
     "tailwindcss": "^3",
     "typescript": "^5.8.3"
+  },
+  "overrides": {
+    "three": "^0.177.0"
   },
   "trustedDependencies": [
     "core-js"
