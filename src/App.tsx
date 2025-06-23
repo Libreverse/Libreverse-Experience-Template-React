@@ -1,6 +1,6 @@
 import { createXRStore } from "@react-three/xr";
 import { Canvas } from "@react-three/fiber";
-import { VRButton, XR, DefaultXRController } from "@react-three/xr";
+import { VRButton, XR } from "@react-three/xr";
 import { type FC, Suspense, memo } from "react";
 import Scene from "./Scene";
 import { EffectsPipeline } from "./EffectsPipeline";
@@ -43,7 +43,6 @@ const App: FC = () => {
           }}
         >
           <XR store={store}>
-            <DefaultXRController />
             <Suspense fallback={null}>
               <Scene />
             </Suspense>

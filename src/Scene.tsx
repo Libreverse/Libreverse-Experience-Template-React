@@ -4,9 +4,10 @@ extend(THREE);
 import { Physics, useBox, usePlane, useSphere } from "@react-three/cannon";
 import { Grid, Html, PointerLockControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import { Interactive } from "@react-three/xr";
+import { Interactive, useXR } from "@react-three/xr";
 import { type FC, useEffect, useRef, useState } from "react";
 import type { Mesh as ThreeMesh } from "three/src/objects/Mesh.js";
+import React from "react";
 type Mesh = ThreeMesh;
 import { Vector3 } from "three/src/math/Vector3.js";
 import type { PointerLockControls as PointerLockControlsImpl } from "three-stdlib";
@@ -44,6 +45,45 @@ interface BoxProps {
 
 const DEFAULT_MATERIAL = { friction: 0.6, restitution: 0.2 };
 
+// Safe Interactive wrapper that works both in XR and non-XR modes
+interface SafeInteractiveProps {
+  children: React.ReactNode;
+  onHover?: () => void;
+  onBlur?: () => void;
+  onSelect?: () => void;
+  onSelectEnd?: () => void;
+}
+
+const SafeInteractive: FC<SafeInteractiveProps> = ({ children, onHover, onBlur, onSelect, onSelectEnd }) => {
+  const xr = useXR();
+  
+  // In XR mode, use Interactive, otherwise use regular mesh events
+  if (xr.session) {
+    return (
+      <Interactive
+        onHover={onHover}
+        onBlur={onBlur}
+        onSelect={onSelect}
+        onSelectEnd={onSelectEnd}
+      >
+        {children}
+      </Interactive>
+    );
+  }
+  
+  // Non-XR mode: add mouse events directly to the mesh
+  return (
+    <group
+      onPointerEnter={onHover}
+      onPointerLeave={onBlur}
+      onClick={onSelect}
+      onPointerUp={onSelectEnd}
+    >
+      {children}
+    </group>
+  );
+};
+
 const Box: FC<BoxProps> = ({ color, position, scale = 1 }) => {
   const [ref] = useBox<THREE.Object3D>(() => ({
     mass: 2, // more realistic mass
@@ -58,7 +98,7 @@ const Box: FC<BoxProps> = ({ color, position, scale = 1 }) => {
   }));
   const [hovered, setHovered] = useState(false);
   return (
-    <Interactive
+    <SafeInteractive
       onHover={() => setHovered(true)}
       onBlur={() => setHovered(false)}
     >
@@ -69,7 +109,7 @@ const Box: FC<BoxProps> = ({ color, position, scale = 1 }) => {
           roughness={0.5}
         />
       </mesh>
-    </Interactive>
+    </SafeInteractive>
   );
 };
 
@@ -91,7 +131,7 @@ const Sphere: FC<SphereProps> = ({ position }) => {
   }));
   const [hovered, setHovered] = useState(false);
   return (
-    <Interactive
+    <SafeInteractive
       onHover={() => setHovered(true)}
       onBlur={() => setHovered(false)}
     >
@@ -102,7 +142,7 @@ const Sphere: FC<SphereProps> = ({ position }) => {
           roughness={0.3}
         />
       </mesh>
-    </Interactive>
+    </SafeInteractive>
   );
 };
 
@@ -294,7 +334,7 @@ const MultiplayerObject: FC<MultiplayerObjectProps> = ({
   };
 
   return (
-    <Interactive
+    <SafeInteractive
       onHover={() => setHovered(true)}
       onBlur={() => setHovered(false)}
       onSelect={handleGrab}
@@ -313,7 +353,7 @@ const MultiplayerObject: FC<MultiplayerObjectProps> = ({
           roughness={0.3}
         />
       </mesh>
-    </Interactive>
+    </SafeInteractive>
   );
 };
 
