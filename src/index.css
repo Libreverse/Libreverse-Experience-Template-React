@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom base styles */
+@layer base {
+  * {
+    @apply box-border m-0 p-0;
+  }
+
+  html,
+  body,
+  #root {
+    @apply w-full h-full m-0 p-0 overflow-hidden bg-black;
+  }
+}
+
+/* Custom components */
+@layer components {
+  .ui-overlay {
+    @apply fixed top-5 left-5 text-white font-sans pointer-events-none z-[1];
+  }
+
+  .vr-button {
+    @apply fixed bottom-5 right-5 px-6 py-3 bg-blue-500 text-white border-none rounded cursor-pointer font-sans transition-colors duration-300 ease-in-out pointer-events-auto z-[1000];
+  }
+
+  .vr-button:hover {
+    @apply bg-blue-700;
+  }
+
+  .vr-button:disabled {
+    @apply bg-gray-300 cursor-not-allowed;
+  }
+
+  /* Utility class to prevent pointer lock on specific elements */
+  .no-pointer-lock {
+    @apply pointer-events-auto z-[1000];
+  }
+
+  /* Make sure all interactive UI elements are above the 3D scene */
+  button, 
+  input, 
+  select, 
+  textarea, 
+  .ui-interactive {
+    @apply pointer-events-auto z-[1000];
+  }
+}

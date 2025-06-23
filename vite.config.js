@@ -3,6 +3,7 @@ import legacy from "@vitejs/plugin-legacy";
 import react from "@vitejs/plugin-react";
 import cssnano from "cssnano";
 import postcssPresetEnv from "postcss-preset-env";
+import tailwindcss from "tailwindcss";
 import { defineConfig } from "vite";
 import { ViteMinifyPlugin } from "vite-plugin-minify";
 import { viteSingleFile } from "vite-plugin-singlefile";
@@ -15,13 +16,9 @@ export default defineConfig(() => {
       setupFiles: ["./src/test-setup.ts"],
     },
     css: {
-      preprocessorOptions: {
-        scss: {
-          api: "modern-compiler",
-        },
-      },
       postcss: {
         plugins: [
+          tailwindcss,
           postcssPresetEnv({ stage: 3 }),
           cssnano({
             preset: [
