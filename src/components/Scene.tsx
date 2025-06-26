@@ -377,7 +377,6 @@ const Scene: FC = () => {
   );
 
   // Multiplayer state
-  const [isConnected, setIsConnected] = useState(() => !!window.P2P?.connected);
   const [remotePlayers, setRemotePlayers] = useState<Map<string, PlayerState>>(
     new Map(),
   );
@@ -388,7 +387,6 @@ const Scene: FC = () => {
   // Register P2P message handler
   useEffect(() => {
     if (!window.P2P) return;
-    setIsConnected(window.P2P.connected);
     const handler = (msg: {
       type: string;
       player?: PlayerState;
@@ -409,13 +407,6 @@ const Scene: FC = () => {
       }
     };
     window.P2P.addMessageHandler(handler);
-    // Poll connection status
-    const interval = setInterval(() => {
-      if (window.P2P) setIsConnected(window.P2P.connected);
-    }, 1000);
-    return () => {
-      clearInterval(interval);
-    };
   }, []);
 
   const handlePlayerUpdate = (playerState: PlayerState) => {
@@ -439,75 +430,44 @@ const Scene: FC = () => {
   };
 
   useEffect(() => {
-    // Smarter pointer lock that only activates when clicking on the 3D scene
+    // Less aggressive pointer lock - only activate on double-click on canvas
     const autoLock = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
 
-      // Don't lock if clicking on UI elements (buttons, overlays, etc.)
-      if (
-        target &&
-        (target.closest(".vr-button") ||
-          target.closest(".ui-overlay") ||
-          target.closest("button") ||
-          target.closest("input") ||
-          target.closest("select") ||
-          target.closest("textarea") ||
-          target.closest("[data-no-pointer-lock]") ||
-          target.tagName === "BUTTON" ||
-          target.tagName === "INPUT" ||
-          target.tagName === "SELECT" ||
-          target.tagName === "TEXTAREA")
-      ) {
-        return;
-      }
-
-      // Only lock if we're not already locked and clicking on the canvas area
+      // Only engage pointer lock on double-click and only on canvas
       if (
         document.pointerLockElement === null &&
-        (target.tagName === "CANVAS" ||
-          target.closest("canvas") ||
-          !target.closest(
-            ".ui-overlay, .vr-button, button, input, select, textarea",
-          ))
+        target.tagName === "CANVAS"
       ) {
         controlsRef.current?.lock?.();
       }
     };
 
-    // Add escape key handler to unlock pointer
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && document.pointerLockElement) {
+    // Manual pointer lock activation with 'L' key for better control
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "l" || event.key === "L") {
+        if (document.pointerLockElement === null) {
+          controlsRef.current?.lock?.();
+        } else {
+          document.exitPointerLock();
+        }
+      } else if (event.key === "Escape" && document.pointerLockElement) {
         document.exitPointerLock();
       }
     };
 
-    window.addEventListener("mousedown", autoLock);
-    window.addEventListener("keydown", handleEscape);
+    // Use double-click instead of single click to be less aggressive
+    window.addEventListener("dblclick", autoLock);
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      window.removeEventListener("mousedown", autoLock);
-      window.removeEventListener("keydown", handleEscape);
+      window.removeEventListener("dblclick", autoLock);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
 
   return (
     <>
-      {/* Connection status indicator */}
-      <Html position={[0, 2, 0]} style={{ zIndex: 1000 }} center>
-        <div
-          style={{
-            color: isConnected ? "green" : "red",
-            background: "rgba(0,0,0,0.7)",
-            padding: "5px 10px",
-            borderRadius: "5px",
-            fontSize: "12px",
-          }}
-        >
-          {isConnected
-            ? `Connected (${remotePlayers.size} players)`
-            : "Disconnected"}
-        </div>
-      </Html>
       <Physics
         gravity={[0, -9.81, 0]}
         allowSleep

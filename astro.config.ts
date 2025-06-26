@@ -3,7 +3,6 @@ import react from "@astrojs/react";
 import tailwind from "@astrojs/tailwind";
 import MillionLint from "@million/lint";
 import legacySwc from "vite-plugin-legacy-swc";
-import reactSwc from "@vitejs/plugin-react-swc";
 import posthtml from "rollup-plugin-posthtml";
 import htmlnano from "htmlnano";
 import cssnano from "cssnano";
@@ -218,27 +217,6 @@ export default defineConfig({
         },
         plugins: [
             MillionLint.vite(),
-            reactSwc({
-                // SWC configuration for faster React compilation
-                swcOptions: {
-                    jsc: {
-                        parser: {
-                            syntax: "typescript",
-                            tsx: true,
-                            decorators: true, // Enable TypeScript decorators
-                        },
-                        transform: {
-                            react: {
-                                runtime: "automatic",
-                                development: false,
-                                refresh: true,
-                            },
-                        },
-                        target: "es2020",
-                        loose: true,
-                    },
-                },
-            }),
             legacySwc({
                 // Enhanced SWC-based legacy compilation for better performance
                 // Explicit targets to match your browser support requirements
