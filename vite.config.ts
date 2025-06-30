@@ -3,7 +3,6 @@ import react from "@vitejs/plugin-react";
 import MillionLint from "@million/lint";
 import legacySwc from "vite-plugin-legacy-swc";
 import cssnano from "cssnano";
-import postcssPresetEnv from "postcss-preset-env";
 import tailwindcss from "tailwindcss";
 import { viteSingleFile } from "vite-plugin-singlefile";
 
@@ -15,10 +14,8 @@ const htmlNanoPlugin = () => {
     apply: "build" as const,
     async transformIndexHtml(html: string) {
       try {
-        // Use dynamic import to properly load ES modules
         const posthtml = await import("posthtml");
         const htmlnanoModule = await import("htmlnano");
-
         const result = await posthtml
           .default()
           .use(
@@ -27,19 +24,16 @@ const htmlNanoPlugin = () => {
             }),
           )
           .process(html);
-
         return result.html;
       } catch (error) {
         console.warn("htmlnano optimization failed:", error);
-        return html; // Return original HTML if optimization fails
+        return html;
       }
     },
   };
 };
 
-// https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  // Remove experimental Rolldown features since we're using regular Vite
   plugins: [
     react({
       babel: {
@@ -49,17 +43,13 @@ export default defineConfig(({ mode }) => ({
                 [
                   "babel-plugin-react-compiler",
                   {
-                    compilationMode: "all", // Compile ALL components, not just annotated ones
-                    panicThreshold: "none", // Bail out on any errors for debugging
-                    sources: (filename: string) => {
-                      return (
-                        filename.endsWith(".tsx") ||
-                        filename.endsWith(".jsx") ||
-                        filename.endsWith(".ts") ||
-                        filename.endsWith(".js")
-                      );
-                    },
-                    // Additional aggressive optimizations
+                    compilationMode: "all",
+                    panicThreshold: "none",
+                    sources: (filename: string) =>
+                      filename.endsWith(".tsx") ||
+                      filename.endsWith(".jsx") ||
+                      filename.endsWith(".ts") ||
+                      filename.endsWith(".js"),
                     enableTreatRefLikeIdentifierAsRef: true,
                     enablePreserveExistingMemoizationGuarantees: false,
                     enableTransitivelyFreezeFunctionExpressions: true,
@@ -69,23 +59,14 @@ export default defineConfig(({ mode }) => ({
             : []),
         ],
       },
+      jsxRuntime: "automatic", // Use automatic runtime in all modes
+      jsxImportSource: "react", // Specify the import source consistently
     }),
     MillionLint.vite(),
-    // Move legacy plugin to match working Astro config pattern - it needs to create chunks
-    viteSingleFile({
-      useRecommendedBuildConfig: false, // Let us handle the build config
-      removeViteModuleLoader: true,
-      deleteInlinedFiles: true,
-    }),
-    // Add custom htmlnano plugin
-    htmlNanoPlugin(),
-    // Legacy plugin moved here to match working Astro pattern
     legacySwc({
-      // Enhanced SWC-based legacy compilation for better performance
-      // Explicit targets to match your browser support requirements
       targets: [
         "Chrome >= 8",
-        "Edge >= 12", 
+        "Edge >= 12",
         "Safari >= 5.1",
         "Firefox >= 4",
         "ie >= 11",
@@ -94,37 +75,53 @@ export default defineConfig(({ mode }) => ({
         "and_ff >= 132",
       ],
       modernPolyfills: true,
-      renderLegacyChunks: true, // Enable legacy chunks like in working Astro config
+      renderLegacyChunks: false,
+      // @ts-expect-error SWC doesn't have type definitions for this option
+      swcOptions: {
+        jsc: {
+          target: "es5",
+          loose: true,
+          minify: false,
+        },
+      },
     }),
+    viteSingleFile({
+      useRecommendedBuildConfig: true,
+      removeViteModuleLoader: true,
+      deleteInlinedFiles: true,
+    }),
+    htmlNanoPlugin(),
   ],
   build: {
-    // Optimize for single file output
+    target: ["es5", "chrome8", "edge12", "firefox4", "ie11", "safari5.1", "ios8"],
+    modulePreload: { polyfill: true },
     cssCodeSplit: false,
     assetsInlineLimit: 2147483647,
+    cssTarget: ["chrome8", "edge12", "firefox4", "ie11", "safari5.1", "ios8"],
+    cssMinify: "lightningcss",
+    sourcemap: false,
+    chunkSizeWarningLimit: 2147483647,
+    reportCompressedSize: false,
     rollupOptions: {
       external: [],
       output: {
         minifyInternalExports: true,
-        // Allow legacy chunks but inline dynamic imports for other modules
-        inlineDynamicImports: false, // Changed from true to allow legacy chunks
-        // Use manualChunks for regular Vite/Rollup
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-three': ['three'],
-          'three-fiber': ['@react-three/fiber'],
-          'three-drei': ['@react-three/drei'],
-          'three-cannon': ['@react-three/cannon', 'cannon-es'],
-          'three-xr': ['@react-three/xr'],
-          'three-postprocessing': ['@react-three/postprocessing', 'postprocessing'],
-          'utils-actioncable': ['@rails/actioncable'],
-          'utils-hotkeys': ['react-hotkeys'],
+        compact: true,
+        generatedCode: {
+          preset: "es5",
+          arrowFunctions: false,
+          constBindings: false,
+          objectShorthand: false,
         },
       },
+      treeshake: {
+        moduleSideEffects: false,
+        propertyReadSideEffects: false,
+        tryCatchDeoptimization: false,
+        unknownGlobalSideEffects: false,
+      },
     },
-    // Use terser like the working Astro config
     minify: "terser",
-    // minify: "terser",
-    // Enhanced Terser configuration with performance optimizations
     terserOptions: {
       parse: {
         bare_returns: false,
@@ -133,7 +130,7 @@ export default defineConfig(({ mode }) => ({
       },
       compress: {
         defaults: true,
-        arrows: true,
+        arrows: false,
         arguments: true,
         booleans: true,
         booleans_as_integers: false,
@@ -145,13 +142,13 @@ export default defineConfig(({ mode }) => ({
         directives: true,
         drop_console: true,
         drop_debugger: true,
-        ecma: 2015,
+        ecma: 5,
         evaluate: true,
         expression: false,
         global_defs: {},
         hoist_funs: true,
         hoist_props: true,
-        hoist_vars: true,
+        hoist_vars: false,
         if_return: true,
         inline: true,
         join_vars: true,
@@ -164,6 +161,7 @@ export default defineConfig(({ mode }) => ({
         passes: 3,
         properties: true,
         pure_getters: "strict",
+        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.trace'],
         reduce_vars: true,
         reduce_funcs: true,
         sequences: true,
@@ -197,7 +195,7 @@ export default defineConfig(({ mode }) => ({
         beautify: false,
         braces: false,
         comments: "some",
-        ecma: 2015,
+        ecma: 5,
         indent_level: 4,
         inline_script: true,
         keep_numbers: false,
@@ -242,7 +240,6 @@ export default defineConfig(({ mode }) => ({
     postcss: {
       plugins: [
         tailwindcss,
-        postcssPresetEnv({ stage: 3 }),
         cssnano({
           preset: [
             "advanced",
@@ -257,8 +254,32 @@ export default defineConfig(({ mode }) => ({
         }),
       ],
     },
+    lightningcss: {
+      targets: {
+        chrome: 8 << 16,
+        edge: 12 << 16,
+        firefox: 4 << 16,
+        ie: 11 << 16,
+        safari: (5 << 16) | (1 << 8),
+        ios_saf: 8 << 16,
+      },
+    },
   },
   define: {
     global: "globalThis",
+  },
+  server: {
+    hmr: { overlay: false },
+    fs: { strict: false },
+  },
+  experimental: {
+    parserCache: true,
+    hmrPartialAccept: true,
+  },
+  esbuild: {
+    target: mode === "development" ? "esnext" : "es2020",
+    keepNames: mode === "development",
+    treeShaking: true,
+    legalComments: "inline",
   },
 }));
