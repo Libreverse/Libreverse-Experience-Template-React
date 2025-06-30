@@ -392,7 +392,7 @@ interface Props {
 
 export function EffectsPipeline({
   quality = "ultra",
-  enableStylizedEffects = false,
+  enableStylizedEffects = true,
 }: Props) {
   const q = EFFECTS_CONFIG.quality[quality];
 
