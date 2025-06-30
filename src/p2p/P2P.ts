@@ -146,7 +146,9 @@ class DevWebSocketP2P implements LibreverseP2PInterface {
       try {
         const data = JSON.parse(event.data);
         this.handlers.forEach((h) => h(data));
-      } catch {}
+      } catch (error) {
+        console.warn("Failed to parse WebSocket message:", error);
+      }
     };
     this.ws.onclose = () => {
       this.connected = false;

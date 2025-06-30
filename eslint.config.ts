@@ -2,6 +2,8 @@ import js from "@eslint/js";
 import { FlatCompat } from "@eslint/eslintrc";
 import typescript from "@typescript-eslint/eslint-plugin";
 import typescriptParser from "@typescript-eslint/parser";
+import reactHooks from "eslint-plugin-react-hooks";
+import reactCompiler from "eslint-plugin-react-compiler";
 import prettierConfig from "eslint-config-prettier";
 import type { Linter } from "eslint";
 
@@ -29,6 +31,8 @@ export default [
     },
     plugins: {
       "@typescript-eslint": typescript,
+      "react-hooks": reactHooks,
+      "react-compiler": reactCompiler,
     },
     rules: {
       // Inherit standard-react rules first
@@ -54,6 +58,12 @@ export default [
       "react/react-in-jsx-scope": "off", // Not needed with React 17+
       "react/prop-types": "off", // Using TypeScript for prop validation
 
+      // React Hooks rules (React Compiler compatible)
+      ...reactHooks.configs.recommended.rules,
+
+      // React Compiler rules
+      "react-compiler/react-compiler": "error",
+
       // Let TypeScript handle these
       "no-undef": "off",
 
@@ -75,6 +85,8 @@ export default [
     },
     plugins: {
       "@typescript-eslint": typescript,
+      "react-hooks": reactHooks,
+      "react-compiler": reactCompiler,
     },
     rules: {
       // Inherit standard-react rules first
@@ -94,6 +106,12 @@ export default [
       // React specific overrides for TypeScript files
       "react/react-in-jsx-scope": "off", // Not needed with React 17+
       "react/prop-types": "off", // Using TypeScript for prop validation
+
+      // React Hooks rules (React Compiler compatible)
+      ...reactHooks.configs.recommended.rules,
+
+      // React Compiler rules
+      "react-compiler/react-compiler": "error",
 
       // Let TypeScript handle these
       "no-undef": "off",

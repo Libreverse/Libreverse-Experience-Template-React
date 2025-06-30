@@ -1,21 +1,10 @@
 import { createXRStore } from "@react-three/xr";
 import { Canvas } from "@react-three/fiber";
 import { VRButton, XR } from "@react-three/xr";
-import { type FC, Suspense, memo, useMemo } from "react";
+import { type FC, Suspense, useMemo } from "react";
 import Scene from "./Scene";
 import { EffectsPipeline } from "./EffectsPipeline";
 import { HotKeysProvider } from "./HotKeysProvider";
-
-const Overlay: FC = memo(() => {
-  return (
-    <div className="ui-overlay">
-      <h1>Libreverse Experience</h1>
-      <p>Click objects to interact • Use mouse/touch to look around</p>
-    </div>
-  );
-});
-
-Overlay.displayName = "Overlay";
 
 const App: FC = () => {
   const store = useMemo(() => createXRStore(), []);
@@ -52,7 +41,6 @@ const App: FC = () => {
           <EffectsPipeline />
         </Canvas>
       </div>
-      <Overlay />
     </HotKeysProvider>
   );
 };

@@ -21,7 +21,7 @@
     "baseUrl": ".",
     "types": ["react", "react-dom", "node"],
     "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedParameters": true
   },
   "include": ["src", "vite.config.ts"]
 }

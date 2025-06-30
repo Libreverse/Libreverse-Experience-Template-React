@@ -2,14 +2,13 @@ import { extend } from "@react-three/fiber";
 import * as THREE from "three";
 extend(THREE);
 import { Physics, useBox, usePlane, useSphere } from "@react-three/cannon";
-import { Grid, Html, PointerLockControls } from "@react-three/drei";
+import { Grid, PointerLockControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Interactive, useXR } from "@react-three/xr";
 import { type FC, useEffect, useRef, useState } from "react";
 import React from "react";
-type Mesh = THREE.Mesh;
 import type { PointerLockControls as PointerLockControlsImpl } from "three-stdlib";
-import type { GameObjectUpdate, PlayerState } from "./p2p/types";
+import type { GameObjectUpdate, PlayerState } from "../p2p/types";
 import { useHotKeys } from "./HotKeysProvider";
 
 // Extend window type for P2P
@@ -272,7 +271,7 @@ interface RemotePlayerProps {
 }
 
 const RemotePlayer: FC<RemotePlayerProps> = ({ player }) => {
-  const meshRef = useRef<Mesh>(null);
+  const meshRef = useRef<any>(null);
 
   useFrame(() => {
     if (meshRef.current) {
@@ -312,7 +311,7 @@ const MultiplayerObject: FC<MultiplayerObjectProps> = ({
   object,
   onInteract,
 }) => {
-  const meshRef = useRef<Mesh>(null);
+  const meshRef = useRef<any>(null);
   const [hovered, setHovered] = useState(false);
   const [grabbed, setGrabbed] = useState(false);
 
@@ -435,10 +434,7 @@ const Scene: FC = () => {
       const target = event.target as HTMLElement;
 
       // Only engage pointer lock on double-click and only on canvas
-      if (
-        document.pointerLockElement === null &&
-        target.tagName === "CANVAS"
-      ) {
+      if (document.pointerLockElement === null && target.tagName === "CANVAS") {
         controlsRef.current?.lock?.();
       }
     };

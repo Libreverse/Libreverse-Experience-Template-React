@@ -155,7 +155,8 @@ class AtmosphericPerspectiveEffect extends Effect {
   constructor(
     density: number = EFFECTS_CONFIG.atmosphericPerspective.density,
     falloff: number = EFFECTS_CONFIG.atmosphericPerspective.falloff,
-    fogColor: [number, number, number] = EFFECTS_CONFIG.atmosphericPerspective.fogColor
+    fogColor: [number, number, number] = EFFECTS_CONFIG.atmosphericPerspective
+      .fogColor,
   ) {
     super("AtmosphericPerspective", atmosphericFragmentShader, {
       uniforms: new Map([
@@ -168,17 +169,23 @@ class AtmosphericPerspectiveEffect extends Effect {
 
   // Setters for dynamic adjustment
   set density(v: number) {
-    const uniform = this.uniforms.get("density") as { value: number } | undefined;
+    const uniform = this.uniforms.get("density") as
+      | { value: number }
+      | undefined;
     if (uniform) uniform.value = v;
   }
 
   set falloff(v: number) {
-    const uniform = this.uniforms.get("falloff") as { value: number } | undefined;
+    const uniform = this.uniforms.get("falloff") as
+      | { value: number }
+      | undefined;
     if (uniform) uniform.value = v;
   }
 
   set fogColor(v: [number, number, number]) {
-    const uniform = this.uniforms.get("fogColor") as { value: [number, number, number] } | undefined;
+    const uniform = this.uniforms.get("fogColor") as
+      | { value: [number, number, number] }
+      | undefined;
     if (uniform) uniform.value = v;
   }
 }
@@ -237,7 +244,8 @@ class DistanceDesaturationEffect extends Effect {
   constructor(
     intensity: number = EFFECTS_CONFIG.distanceDesaturation.intensity,
     falloff: number = EFFECTS_CONFIG.distanceDesaturation.falloff,
-    centerPreservation: number = EFFECTS_CONFIG.distanceDesaturation.centerPreservation
+    centerPreservation: number = EFFECTS_CONFIG.distanceDesaturation
+      .centerPreservation,
   ) {
     super("DistanceDesaturation", desaturationFragmentShader, {
       uniforms: new Map([
@@ -250,17 +258,23 @@ class DistanceDesaturationEffect extends Effect {
 
   // Setters for dynamic adjustment
   set intensity(v: number) {
-    const uniform = this.uniforms.get("intensity") as { value: number } | undefined;
+    const uniform = this.uniforms.get("intensity") as
+      | { value: number }
+      | undefined;
     if (uniform) uniform.value = v;
   }
 
   set falloff(v: number) {
-    const uniform = this.uniforms.get("falloff") as { value: number } | undefined;
+    const uniform = this.uniforms.get("falloff") as
+      | { value: number }
+      | undefined;
     if (uniform) uniform.value = v;
   }
 
   set centerPreservation(v: number) {
-    const uniform = this.uniforms.get("centerPreservation") as { value: number } | undefined;
+    const uniform = this.uniforms.get("centerPreservation") as
+      | { value: number }
+      | undefined;
     if (uniform) uniform.value = v;
   }
 }
@@ -277,7 +291,8 @@ const DistanceDesaturationPass: React.FC<DistanceDesaturationPassProps> = ({
   centerPreservation = EFFECTS_CONFIG.distanceDesaturation.centerPreservation,
 }) => {
   const effect = useMemo(
-    () => new DistanceDesaturationEffect(intensity, falloff, centerPreservation),
+    () =>
+      new DistanceDesaturationEffect(intensity, falloff, centerPreservation),
     [intensity, falloff, centerPreservation],
   );
 
@@ -377,12 +392,14 @@ interface Props {
 
 export function EffectsPipeline({
   quality = "ultra",
-  enableStylizedEffects = true,
-  enableCurvature = true,
-  enableAtmosphericPerspective = true,
-  enableDistanceDesaturation = true,
+  enableStylizedEffects = false,
 }: Props) {
   const q = EFFECTS_CONFIG.quality[quality];
+
+  // Make bottom three depend on enableStylizedEffects
+  const curvatureEnabled = enableStylizedEffects;
+  const atmosphericEnabled = enableStylizedEffects
+  const desaturationEnabled = enableStylizedEffects;
 
   // Memoized placeholder passes
   const aces = useMemo(() => new ACESToneMap(), []);
@@ -430,8 +447,8 @@ export function EffectsPipeline({
         {/* --- atmospheric perspective --- */}
         <AtmosphericPerspectivePass
           density={
-            enableAtmosphericPerspective 
-              ? EFFECTS_CONFIG.atmosphericPerspective.density 
+            atmosphericEnabled
+              ? EFFECTS_CONFIG.atmosphericPerspective.density
               : 0.0
           }
           falloff={EFFECTS_CONFIG.atmosphericPerspective.falloff}
@@ -441,12 +458,14 @@ export function EffectsPipeline({
         {/* --- distance desaturation --- */}
         <DistanceDesaturationPass
           intensity={
-            enableDistanceDesaturation 
-              ? EFFECTS_CONFIG.distanceDesaturation.intensity 
+            desaturationEnabled
+              ? EFFECTS_CONFIG.distanceDesaturation.intensity
               : 0.0
           }
           falloff={EFFECTS_CONFIG.distanceDesaturation.falloff}
-          centerPreservation={EFFECTS_CONFIG.distanceDesaturation.centerPreservation}
+          centerPreservation={
+            EFFECTS_CONFIG.distanceDesaturation.centerPreservation
+          }
         />
 
         {/* --- stylized passes (order preserved) --- */}
@@ -475,7 +494,7 @@ export function EffectsPipeline({
         {/* --- curvature LAST so other passes work in flat space --- */}
         <CurvaturePass
           curveStrength={
-            enableCurvature ? EFFECTS_CONFIG.curvature.strength : 0.0
+            curvatureEnabled ? EFFECTS_CONFIG.curvature.strength : 0.0
           }
         />
       </EffectComposer>
