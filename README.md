@@ -211,7 +211,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-MIT License - feel free to use this template for any project!
+AGPL License, just like Libreverse.
 
 ## Acknowledgments
 
